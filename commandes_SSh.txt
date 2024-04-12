@@ -1,0 +1,4 @@
+ssh-keygen.exe
+notepad ..../id_rsa.pub pour copier la clé
+changer le https en http coté serveur js
+ssh -p 2222 -tR 0:127.0.0.1:5173 root@tunnel.ucaya.com wertcclient
