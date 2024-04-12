@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camera Stream</title>
+</head>
+<body>
+<video id="videoElement" autoplay playsinline></video>
+ <h4>Cropped video stream using InsertableStreams </h4>
+  <canvas id="canvas"></canvas>
+
+<script>
+// Request access to the user's camera
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then((stream) => {
+    const videoElement = document.getElementById('videoElement');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+
+    // Create a MediaStreamTrackProcessor
+    const trackProcessor = new MediaStreamTrackProcessor({ track: stream.getVideoTracks()[0] });
+
+    // Create a TransformStream that passes through video frames
+    const passthroughTransformer = new TransformStream();
+
+    // Pipe the readable stream from trackProcessor through the passthrough transformer
+    trackProcessor.readable.pipeTo(passthroughTransformer.writable);
+
+    // Create a MediaStreamTrackGenerator
+    const trackGenerator = new MediaStreamTrackGenerator({ kind: 'video' });
+
+    // Pipe the transformed stream from the passthrough transformer to the writable stream of trackGenerator
+    passthroughTransformer.readable.pipeTo(trackGenerator.writable);
+
+    // Create a new MediaStream object and add the generated video track to it
+    const outputMediaStream = new MediaStream([trackGenerator]);
+
+    // Assign the generated MediaStream to the video element
+    videoElement.srcObject = outputMediaStream;
+    // Update canvas with cropped video frame and capture stream
+    function updateCanvasAndCaptureStream() {
+        ctx.drawImage(videoElement, 200, 120, 200, 200, 10, 10, 150, 150); // Crop and draw video frame
+        requestAnimationFrame(updateCanvasAndCaptureStream);
+    }
+
+    // Start updating canvas and capturing stream when video is playing
+    videoElement.addEventListener('play', function() {               
+        requestAnimationFrame(updateCanvasAndCaptureStream);
+    });
+    // Update canvas when video time changes
+    videoElement.addEventListener('timeupdate', function() {
+        requestAnimationFrame(updateCanvasAndCaptureStream);
+    });
+  })
+  .catch((error) => {
+    console.error('Error accessing camera:', error);
+  });
+</script>
+</body>
+</html>

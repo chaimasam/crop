@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camera Stream</title>
+</head>
+<body>
+<video id="videoElement" autoplay playsinline></video>
+
+<script>
+// Request access to the user's camera
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then((stream) => {
+    const videoElement = document.getElementById('videoElement');
+
+    // Create a MediaStreamTrackProcessor
+    const trackProcessor = new MediaStreamTrackProcessor({ track: stream.getVideoTracks()[0] });
+
+    // Create a TransformStream that passes through video frames
+    const passthroughTransformer = new TransformStream();
+
+    // Pipe the readable stream from trackProcessor through the passthrough transformer
+    trackProcessor.readable.pipeTo(passthroughTransformer.writable);
+
+    // Create a MediaStreamTrackGenerator
+    const trackGenerator = new MediaStreamTrackGenerator({ kind: 'video' });
+
+    // Pipe the transformed stream from the passthrough transformer to the writable stream of trackGenerator
+    passthroughTransformer.readable.pipeTo(trackGenerator.writable);
+
+    // Create a new MediaStream object and add the generated video track to it
+    const outputMediaStream = new MediaStream([trackGenerator]);
+
+    // Assign the generated MediaStream to the video element
+    videoElement.srcObject = outputMediaStream;
+  })
+  .catch((error) => {
+    console.error('Error accessing camera:', error);
+  });
+</script>
+</body>
+</html>
